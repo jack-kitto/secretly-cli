@@ -2,15 +2,8 @@ package main
 
 import (
 	"fmt"
-	"secretly-cli/internal/server"
 )
 
 func main() {
-
-	server := server.NewServer()
-
-	err := server.ListenAndServe()
-	if err != nil {
-		panic(fmt.Sprintf("cannot start server: %s", err))
-	}
+	fmt.Println("Welcome to secretly-cli")
 }
