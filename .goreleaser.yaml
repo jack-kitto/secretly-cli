@@ -5,26 +5,39 @@ before:
     - go mod tidy
     - go generate ./...
 
+env:
+  - PACKAGE_PATH=github.com/jack-kitto/secretly-cli/cmd
+
 builds:
-  - env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
-      - windows
-      - darwin
+- binary: "{{ .ProjectName }}"
+  main: ./cmd/cli
+  goos:
+  - darwin
+  - linux
+  - windows
+  goarch:
+  - amd64
+  - arm64
+  env:
+  - CGO_ENABLED=0
+  ldflags:
+  - -s -w -X {{.Env.PACKAGE_PATH}}={{.Version}} 
+
+universal_binaries:
+- replace: true
 
 archives:
-  - format: tar.gz
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
+  - name_template: >
+      {{- .ProjectName }}_{{- .Version }}_{{- title .Os }}_{{- if eq .Arch "amd64" }}x86_64{{- else if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}{{- if .Arm }}v{{ .Arm }}{{ end -}}
     format_overrides:
       - goos: windows
         format: zip
+    builds_info:
+      group: root
+      owner: root
+    files:
+      - README.md
+
 
 changelog:
   sort: asc
@@ -34,7 +47,7 @@ changelog:
       - "^test:"
 
 release:
-  draft: true
+  draft: false
   replace_existing_draft: true
   replace_existing_artifacts: true
   target_commitish: "{{ .Commit }}"
@@ -51,7 +64,3 @@ release:
     Those were the changes on {{ .Tag }}!
 
   include_meta: true
-
-universal_binaries:
-    replace: true
-    mod_timestamp: "{{ .CommitTimestamp }}"
