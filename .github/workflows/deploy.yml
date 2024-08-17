@@ -29,8 +29,11 @@ jobs:
           token: ${{ github.token }}
           branch: main
 
-      - name: Create Tag
-        uses: tvdias/github-tagger@v0.0.1
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.semver.outputs.next }}
+      - name: Push Git Tag
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag -a ${{ steps.semver.outputs.next }} -m "Release ${{ steps.semver.outputs.next }}"
+          git push origin ${{ steps.semver.outputs.next }}
