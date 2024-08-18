@@ -7,7 +7,10 @@ import (
 )
 
 // MsgSwitchToLogin is a message to switch the view to the login screen.
-type MsgSwitchToLogin struct{}
+type (
+	MsgSwitchToLogin   struct{}
+	MsgSwitchToProject struct{}
+)
 
 // MsgExitApp is a message to quit the application.
 type MsgExitApp struct{}
@@ -20,7 +23,7 @@ type LandingModel struct {
 
 func LandingModle_New() LandingModel {
 	return LandingModel{
-		choices:  []string{"Login", "About", "Exit"},
+		choices:  []string{"Login", "About", "Exit", "Demo Project View"},
 		selected: make(map[int]struct{}),
 	}
 }
@@ -60,6 +63,8 @@ func (m LandingModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, func() tea.Msg { return MsgSwitchToLogin{} }
 			case 2:
 				return m, func() tea.Msg { return MsgExitApp{} }
+			case 3:
+				return m, func() tea.Msg { return MsgSwitchToProject{} }
 			}
 		}
 	}

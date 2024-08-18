@@ -7,12 +7,14 @@ import (
 const (
 	LANDING = "LANDING"
 	LOGIN   = "LOGIN"
+	PROJECT = "PROJECT"
 )
 
 type MainModel struct {
 	state   string
 	landing LandingModel
 	login   LoginModel
+	project ProjectModel
 }
 
 func (m MainModel) Init() tea.Cmd {
@@ -30,6 +32,8 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.state = LOGIN
 	case MsgExitApp:
 		return m, tea.Quit
+	case MsgSwitchToProject:
+		m.state = PROJECT
 	}
 
 	switch m.state {
@@ -41,6 +45,10 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		updatedLogin, loginCmd := m.login.Update(msg)
 		m.login = updatedLogin.(LoginModel)
 		cmd = loginCmd
+	case PROJECT:
+		updatedProject, projectCmd := m.project.Update(msg)
+		m.project = updatedProject.(ProjectModel)
+		cmd = projectCmd
 	}
 
 	return m, cmd
@@ -52,6 +60,8 @@ func (m MainModel) View() string {
 		return m.landing.View()
 	case LOGIN:
 		return m.login.View()
+	case PROJECT:
+		return m.project.View()
 	}
 	return "Main Model View"
 }
@@ -61,5 +71,6 @@ func MainModel_New() MainModel {
 		state:   LANDING,
 		landing: LandingModle_New(),
 		login:   LoginModel_New(),
+		project: ProjectModel_New(),
 	}
 }
