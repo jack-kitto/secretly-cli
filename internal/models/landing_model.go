@@ -6,6 +6,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// MsgSwitchToLogin is a message to switch the view to the login screen.
+type MsgSwitchToLogin struct{}
+
+// MsgExitApp is a message to quit the application.
+type MsgExitApp struct{}
+
 type LandingModel struct {
 	choices  []string
 	cursor   int
@@ -47,6 +53,13 @@ func (m LandingModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				delete(m.selected, m.cursor)
 			} else {
 				m.selected[m.cursor] = struct{}{}
+			}
+
+			switch m.cursor {
+			case 0:
+				return m, func() tea.Msg { return MsgSwitchToLogin{} }
+			case 2:
+				return m, func() tea.Msg { return MsgExitApp{} }
 			}
 		}
 	}
