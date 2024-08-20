@@ -12,7 +12,7 @@ type (
 	errMsg error
 )
 
-type AddSecretModel struct {
+type SecretFormModel struct {
 	nameInput  textinput.Model
 	valueInput textinput.Model
 	err        error
@@ -28,7 +28,7 @@ type (
 	ADD_SECRET_COMPLETE_MSG struct{}
 )
 
-func AddSecretModel_New(project secretly.Project) AddSecretModel {
+func SecretFormModel_New(project secretly.Project) SecretFormModel {
 	name_ti := textinput.New()
 	name_ti.Placeholder = "Name"
 	name_ti.Focus()
@@ -40,7 +40,7 @@ func AddSecretModel_New(project secretly.Project) AddSecretModel {
 	value_ti.CharLimit = 156
 	value_ti.Width = 20
 
-	return AddSecretModel{
+	return SecretFormModel{
 		nameInput:  name_ti,
 		valueInput: value_ti,
 		err:        nil,
@@ -51,11 +51,11 @@ func AddSecretModel_New(project secretly.Project) AddSecretModel {
 	}
 }
 
-func (m AddSecretModel) Init() tea.Cmd {
+func (m SecretFormModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m AddSecretModel) BuildSecrets() []secretly.Secret {
+func (m SecretFormModel) BuildSecrets() []secretly.Secret {
 	var secrets []secretly.Secret
 	value := m.valueInput.Value()
 	name := m.nameInput.Value()
@@ -67,7 +67,7 @@ func (m AddSecretModel) BuildSecrets() []secretly.Secret {
 	return secrets
 }
 
-func (m AddSecretModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m SecretFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -141,7 +141,7 @@ func (m AddSecretModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m AddSecretModel) View() string {
+func (m SecretFormModel) View() string {
 	s := fmt.Sprintf(
 		"What's your secret?\n\n%s",
 		m.nameInput.View(),

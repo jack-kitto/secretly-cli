@@ -15,10 +15,10 @@ var (
 )
 
 type ProjectModel struct {
-	project        secretly.Project
-	table          table.Model
-	state          string
-	addSecretModel AddSecretModel
+	project         secretly.Project
+	table           table.Model
+	state           string
+	secretFormModel SecretFormModel
 }
 
 func (self *ProjectModel) UpdateTableRows() {
@@ -87,10 +87,10 @@ func ProjectModel_New() ProjectModel {
 	t.SetStyles(s)
 
 	projectModel := ProjectModel{
-		project:        p,
-		state:          PROJECT_VIEW,
-		table:          t,
-		addSecretModel: AddSecretModel_New(p),
+		project:         p,
+		state:           PROJECT_VIEW,
+		table:           t,
+		secretFormModel: SecretFormModel_New(p),
 	}
 	projectModel.UpdateTableRows()
 	return projectModel
@@ -113,7 +113,7 @@ func (p *ProjectModel) DeleteSecret(s secretly.Secret) {
 
 func (m ProjectModel) Init() tea.Cmd {
 	if m.state == ADDING_SECRET {
-		return m.addSecretModel.Init()
+		return m.secretFormModel.Init()
 	}
 	return nil
 }
@@ -142,17 +142,17 @@ func (m ProjectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.state == ADDING_SECRET {
 		var addSecretCmd tea.Cmd
 		var model tea.Model
-		model, addSecretCmd = m.addSecretModel.Update(msg)
-		m.addSecretModel = model.(AddSecretModel)
-		if m.addSecretModel.submitted {
-			secrets := m.addSecretModel.BuildSecrets()
+		model, addSecretCmd = m.secretFormModel.Update(msg)
+		m.secretFormModel = model.(SecretFormModel)
+		if m.secretFormModel.submitted {
+			secrets := m.secretFormModel.BuildSecrets()
 			for _, s := range secrets {
 				s.Print()
 			}
 			m.state = PROJECT_VIEW
-			m.project.DistributeSecrets(m.addSecretModel.BuildSecrets())
+			m.project.DistributeSecrets(m.secretFormModel.BuildSecrets())
 			m.UpdateTableRows()
-			m.addSecretModel = AddSecretModel_New(m.project)
+			m.secretFormModel = SecretFormModel_New(m.project)
 		}
 		return m, addSecretCmd
 	}
@@ -174,7 +174,7 @@ func (m ProjectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "N", "n", "a", "A":
 			if m.state == PROJECT_VIEW {
 				m.state = ADDING_SECRET
-				_, addSecretCmd := m.addSecretModel.Update(nil)
+				_, addSecretCmd := m.secretFormModel.Update(nil)
 				return m, addSecretCmd
 			}
 		}
@@ -190,7 +190,7 @@ var baseStyle = lipgloss.NewStyle().
 
 func (m ProjectModel) View() string {
 	if m.state == ADDING_SECRET {
-		return m.addSecretModel.View()
+		return m.secretFormModel.View()
 	}
 	s := fmt.Sprintf("\n\nProject: %s\n\n", m.project.Name)
 	for _, environment := range m.project.Environments {
