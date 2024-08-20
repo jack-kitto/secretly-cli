@@ -1,3 +1,5 @@
+github.com/atotto/clipboard v0.1.4 h1:EH0zSVneZPSuFR11BlR9YppQTVDbh5+16AmcJi4g1z4=
+github.com/atotto/clipboard v0.1.4/go.mod h1:ZY9tmq7sm5xIbd9bOK4onWV4S6X0u6GY7Vn0Yu86PYI=
 github.com/aymanbagabas/go-osc52/v2 v2.0.1 h1:HwpRHbFMcZLEVr42D4p7XBqjyuxQH5SMiErDT4WkJ2k=
 github.com/aymanbagabas/go-osc52/v2 v2.0.1/go.mod h1:uYgXzlJ7ZpABp8OJ+exZzJJhRNQ2ASbcXHWsFqH8hp8=
 github.com/brianvoe/gofakeit v3.18.0+incompatible h1:wDOmHc9DLG4nRjUVVaxA+CEglKOW72Y5+4WNxUIkjM8=
@@ -20,8 +22,14 @@ github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f h1:Y/CXytFA4m6
 github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f/go.mod h1:vw97MGsxSvLiUE2X8qFplwetxpGLQrlU1Q9AUEIzCaM=
 github.com/jack-kitto/secretly-sdk v1.0.0 h1:iiBuubgyrDrojw/XF9cvtetdJpRVJyHVAAqie55VxWE=
 github.com/jack-kitto/secretly-sdk v1.0.0/go.mod h1:3LkTNu8JC9/UGe47iZVFXBIl2zKfiXZuJHIOJYKTamw=
+github.com/jack-kitto/secretly-sdk v1.1.0 h1:qd+w40JGBHifxxAHzh6cVFgXBny5aY93wsjyh9Zse7A=
+github.com/jack-kitto/secretly-sdk v1.1.0/go.mod h1:lcFF8GzBLWFMGQIFI4HNoD4qpvnkCFEkLNejikjbMx4=
+github.com/jack-kitto/secretly-sdk v1.2.0 h1:EkWUz6SV63rgmsq3P/p3rovfuqJio0zb1bEJ0Wxp5JA=
+github.com/jack-kitto/secretly-sdk v1.2.0/go.mod h1:lcFF8GzBLWFMGQIFI4HNoD4qpvnkCFEkLNejikjbMx4=
 github.com/lucasb-eyer/go-colorful v1.2.0 h1:1nnpGOrhyZZuNyfu1QjKiUICQ74+3FNCN69Aj6K7nkY=
 github.com/lucasb-eyer/go-colorful v1.2.0/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
+github.com/lucsky/cuid v1.2.1 h1:MtJrL2OFhvYufUIn48d35QGXyeTC8tn0upumW9WwTHg=
+github.com/lucsky/cuid v1.2.1/go.mod h1:QaaJqckboimOmhRSJXSx/+IT+VTfxfPGSo/6mfgUfmE=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/mattn/go-localereader v0.0.1 h1:ygSAOl7ZXTx4RdPYinUpg6W99U8jWvWi9Ye2JC/oIi4=
