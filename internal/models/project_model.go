@@ -23,6 +23,7 @@ type ProjectModel struct {
 
 func (self *ProjectModel) UpdateTableRows() {
 	columns := []table.Column{
+		{Title: "ID", Width: 50},
 		{Title: "Name", Width: 50},
 		{Title: "Environment", Width: 20},
 	}
@@ -31,6 +32,7 @@ func (self *ProjectModel) UpdateTableRows() {
 	for _, environment := range self.project.Environments {
 		for _, secret := range environment.Secrets {
 			row := table.Row{
+				secret.ID,
 				secret.Name,
 				environment.Name,
 			}
@@ -94,11 +96,44 @@ func ProjectModel_New() ProjectModel {
 	return projectModel
 }
 
+func (p *ProjectModel) DeleteSecret(s secretly.Secret) {
+	for envIndex, environment := range p.project.Environments {
+		for secretIndex, secret := range environment.Secrets {
+			if secret.ID == s.ID {
+				// Remove the secret from the environment's Secrets slice
+				p.project.Environments[envIndex].Secrets = append(
+					environment.Secrets[:secretIndex],
+					environment.Secrets[secretIndex+1:]...,
+				)
+				return // Exit once the secret is found and deleted
+			}
+		}
+	}
+}
+
 func (m ProjectModel) Init() tea.Cmd {
 	if m.state == ADDING_SECRET {
 		return m.addSecretModel.Init()
 	}
 	return nil
+}
+
+func (m *ProjectModel) DeleteSecretAtCursor() {
+	index := m.table.Cursor()
+	var secretID string
+	for i, row := range m.table.Rows() {
+		if i == index {
+			secretID = row[0]
+		}
+	}
+	for _, environment := range m.project.Environments {
+		for _, secret := range environment.Secrets {
+			if secretID == secret.ID {
+				m.DeleteSecret(secret)
+			}
+		}
+	}
+	m.UpdateTableRows()
 }
 
 func (m ProjectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -133,6 +168,9 @@ func (m ProjectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "ctrl+c", "q":
 			return m, tea.Quit
+		case "d":
+			m.DeleteSecretAtCursor()
+			return m, nil
 		case "N", "n", "a", "A":
 			if m.state == PROJECT_VIEW {
 				m.state = ADDING_SECRET
