@@ -182,9 +182,9 @@ func (m ProjectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		model, addSecretCmd = m.addSecretFormModel.Update(msg)
 		m.addSecretFormModel = model.(SecretFormModel)
 		if m.addSecretFormModel.submitted {
-			secrets, _, _ := m.addSecretFormModel.BuildSecrets()
+			secrets := m.addSecretFormModel.BuildSecrets()
 			m.state = PROJECT_VIEW
-			secrets, _, _ = m.addSecretFormModel.BuildSecrets()
+			secrets = m.addSecretFormModel.BuildSecrets()
 			m.project.DistributeSecrets(secrets)
 			m.UpdateTableRows()
 			m.addSecretFormModel = SecretFormModel_New(m.project, make(map[int]struct{}), nil)
@@ -198,7 +198,7 @@ func (m ProjectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		model, updateSecretCmd = m.updateSecretFormModel.Update(msg)
 		m.updateSecretFormModel = model.(SecretFormModel)
 		if m.updateSecretFormModel.submitted {
-			secrets, _, _ := m.updateSecretFormModel.BuildSecrets()
+			secrets := m.updateSecretFormModel.BuildSecrets()
 			for _, updatedSecret := range secrets {
 				m.DeleteSecretById(updatedSecret)
 			}

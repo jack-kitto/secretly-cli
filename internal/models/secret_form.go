@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -64,21 +65,14 @@ func (m SecretFormModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m SecretFormModel) BuildSecrets() ([]secretly.Secret, []secretly.Environment, []secretly.Environment) {
+func (m SecretFormModel) BuildSecrets() []secretly.Secret {
 	var secrets []secretly.Secret
 	value := m.valueInput.Value()
 	name := m.nameInput.Value()
 
-	// Environments to which the secret was added
-	var addedEnvironments []secretly.Environment
-
-	// Environments from which the secret was removed
-	var removedEnvironments []secretly.Environment
-
 	for i := range m.selected {
 		environment := m.choices[i]
 		var secret secretly.Secret
-
 		if m.initialSecret == (secretly.Secret{}) {
 			// If the initial secret is an empty struct, treat it as if it's nil
 			secret = secretly.Secret_build(name, value, m.project, environment)
@@ -86,21 +80,13 @@ func (m SecretFormModel) BuildSecrets() ([]secretly.Secret, []secretly.Environme
 			secret = m.initialSecret
 			secret.Name = name
 			secret.Value = value
+			secret.EnvironmentID = environment.ID
+			secret.ProjectID = m.project.ID
+			secret.UpdatedAt = time.Now()
 		}
-
 		secrets = append(secrets, secret)
-		if _, wasInitiallySelected := m.initialSelected[i]; !wasInitiallySelected {
-			addedEnvironments = append(addedEnvironments, environment)
-		}
 	}
-
-	for i := range m.initialSelected {
-		if _, isSelectedNow := m.selected[i]; !isSelectedNow {
-			removedEnvironments = append(removedEnvironments, m.choices[i])
-		}
-	}
-
-	return secrets, addedEnvironments, removedEnvironments
+	return secrets
 }
 
 func (m SecretFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
