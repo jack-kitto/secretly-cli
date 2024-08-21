@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -10,15 +11,17 @@ import (
 )
 
 var (
-	ADDING_SECRET = "ADDING_SECRET"
-	PROJECT_VIEW  = "PROJECT_VIEW"
+	ADD_SECRET_FORM    = "ADD_SECRET_FORM"
+	UPDATE_SECRET_FORM = "UPDATE_SECRET_FORM"
+	PROJECT_VIEW       = "PROJECT_VIEW"
 )
 
 type ProjectModel struct {
-	project         secretly.Project
-	table           table.Model
-	state           string
-	secretFormModel SecretFormModel
+	project               secretly.Project
+	table                 table.Model
+	state                 string
+	addSecretFormModel    SecretFormModel
+	updateSecretFormModel SecretFormModel
 }
 
 func (self *ProjectModel) UpdateTableRows() {
@@ -87,16 +90,16 @@ func ProjectModel_New() ProjectModel {
 	t.SetStyles(s)
 
 	projectModel := ProjectModel{
-		project:         p,
-		state:           PROJECT_VIEW,
-		table:           t,
-		secretFormModel: SecretFormModel_New(p),
+		project:            p,
+		state:              PROJECT_VIEW,
+		table:              t,
+		addSecretFormModel: SecretFormModel_New(p, make(map[int]struct{}), nil),
 	}
 	projectModel.UpdateTableRows()
 	return projectModel
 }
 
-func (p *ProjectModel) DeleteSecret(s secretly.Secret) {
+func (p *ProjectModel) DeleteSecretById(s secretly.Secret) {
 	for envIndex, environment := range p.project.Environments {
 		for secretIndex, secret := range environment.Secrets {
 			if secret.ID == s.ID {
@@ -112,13 +115,13 @@ func (p *ProjectModel) DeleteSecret(s secretly.Secret) {
 }
 
 func (m ProjectModel) Init() tea.Cmd {
-	if m.state == ADDING_SECRET {
-		return m.secretFormModel.Init()
+	if m.state == ADD_SECRET_FORM {
+		return m.addSecretFormModel.Init()
 	}
 	return nil
 }
 
-func (m *ProjectModel) DeleteSecretAtCursor() {
+func (m *ProjectModel) GetSecretAtCursor() (*secretly.Secret, error) {
 	index := m.table.Cursor()
 	var secretID string
 	for i, row := range m.table.Rows() {
@@ -129,34 +132,84 @@ func (m *ProjectModel) DeleteSecretAtCursor() {
 	for _, environment := range m.project.Environments {
 		for _, secret := range environment.Secrets {
 			if secretID == secret.ID {
-				m.DeleteSecret(secret)
+				return &secret, nil
 			}
 		}
 	}
+	return nil, errors.New("No secret at cursor")
+}
+
+func (m *ProjectModel) EditSecretAtCursor() {
+	secret, error := m.GetSecretAtCursor()
+	if error != nil {
+		return
+	}
+
+	initialSelections := make(map[int]struct{})
+	selectedSelections := make(map[int]struct{})
+
+	for i, environment := range m.project.Environments {
+		if secret.InEnvironment(environment) {
+			initialSelections[i] = struct{}{}
+			selectedSelections[i] = struct{}{}
+		}
+	}
+
+	m.updateSecretFormModel = SecretFormModel_New(m.project, initialSelections, secret)
+	m.updateSecretFormModel.valueInput.SetValue(secret.Value)
+	m.updateSecretFormModel.nameInput.SetValue(secret.Name)
+	m.updateSecretFormModel.selected = selectedSelections
+
+	// Change the state to UPDATE_SECRET_FORM
+	m.state = UPDATE_SECRET_FORM
+}
+
+func (m *ProjectModel) DeleteSecretAtCursor() {
+	secret, error := m.GetSecretAtCursor()
+	if error != nil {
+		return
+	}
+	m.DeleteSecretById(*secret)
 	m.UpdateTableRows()
 }
 
 func (m ProjectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	if m.state == ADDING_SECRET {
+	if m.state == ADD_SECRET_FORM {
 		var addSecretCmd tea.Cmd
 		var model tea.Model
-		model, addSecretCmd = m.secretFormModel.Update(msg)
-		m.secretFormModel = model.(SecretFormModel)
-		if m.secretFormModel.submitted {
-			secrets := m.secretFormModel.BuildSecrets()
-			for _, s := range secrets {
-				s.Print()
-			}
+		model, addSecretCmd = m.addSecretFormModel.Update(msg)
+		m.addSecretFormModel = model.(SecretFormModel)
+		if m.addSecretFormModel.submitted {
+			secrets, _, _ := m.addSecretFormModel.BuildSecrets()
 			m.state = PROJECT_VIEW
-			m.project.DistributeSecrets(m.secretFormModel.BuildSecrets())
+			secrets, _, _ = m.addSecretFormModel.BuildSecrets()
+			m.project.DistributeSecrets(secrets)
 			m.UpdateTableRows()
-			m.secretFormModel = SecretFormModel_New(m.project)
+			m.addSecretFormModel = SecretFormModel_New(m.project, make(map[int]struct{}), nil)
 		}
 		return m, addSecretCmd
 	}
 
+	if m.state == UPDATE_SECRET_FORM {
+		var updateSecretCmd tea.Cmd
+		var model tea.Model
+		model, updateSecretCmd = m.updateSecretFormModel.Update(msg)
+		m.updateSecretFormModel = model.(SecretFormModel)
+		if m.updateSecretFormModel.submitted {
+			secrets, _, _ := m.updateSecretFormModel.BuildSecrets()
+			for _, updatedSecret := range secrets {
+				m.DeleteSecretById(updatedSecret)
+			}
+			m.project.DistributeSecrets(secrets)
+
+			m.state = PROJECT_VIEW
+			m.UpdateTableRows()
+			m.updateSecretFormModel = SecretFormModel_New(m.project, nil, nil)
+		}
+		return m, updateSecretCmd
+	}
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -171,11 +224,13 @@ func (m ProjectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "d":
 			m.DeleteSecretAtCursor()
 			return m, nil
+		case "e":
+			m.EditSecretAtCursor()
+			return m, m.updateSecretFormModel.Init()
 		case "N", "n", "a", "A":
 			if m.state == PROJECT_VIEW {
-				m.state = ADDING_SECRET
-				_, addSecretCmd := m.secretFormModel.Update(nil)
-				return m, addSecretCmd
+				m.state = ADD_SECRET_FORM
+				return m, m.addSecretFormModel.Init()
 			}
 		}
 	}
@@ -189,8 +244,11 @@ var baseStyle = lipgloss.NewStyle().
 	BorderForeground(lipgloss.Color("240"))
 
 func (m ProjectModel) View() string {
-	if m.state == ADDING_SECRET {
-		return m.secretFormModel.View()
+	if m.state == ADD_SECRET_FORM {
+		return m.addSecretFormModel.View()
+	}
+	if m.state == UPDATE_SECRET_FORM {
+		return m.updateSecretFormModel.View()
 	}
 	s := fmt.Sprintf("\n\nProject: %s\n\n", m.project.Name)
 	for _, environment := range m.project.Environments {

@@ -13,22 +13,24 @@ type (
 )
 
 type SecretFormModel struct {
-	nameInput  textinput.Model
-	valueInput textinput.Model
-	err        error
-	choices    []secretly.Environment // items on the to-do list
-	cursor     int                    // which to-do list item our cursor is pointing at
-	selected   map[int]struct{}       // which to-do items are selected
-	envFocused bool
-	submitted  bool
-	project    secretly.Project
+	nameInput       textinput.Model
+	valueInput      textinput.Model
+	err             error
+	choices         []secretly.Environment // items on the to-do list
+	cursor          int                    // which to-do list item our cursor is pointing at
+	selected        map[int]struct{}       // which to-do items are selected
+	initialSelected map[int]struct{}       // which to-do items are selected
+	envFocused      bool
+	submitted       bool
+	project         secretly.Project
+	initialSecret   secretly.Secret
 }
 
 type (
 	ADD_SECRET_COMPLETE_MSG struct{}
 )
 
-func SecretFormModel_New(project secretly.Project) SecretFormModel {
+func SecretFormModel_New(project secretly.Project, initialSelections map[int]struct{}, initialSecret *secretly.Secret) SecretFormModel {
 	name_ti := textinput.New()
 	name_ti.Placeholder = "Name"
 	name_ti.Focus()
@@ -40,14 +42,21 @@ func SecretFormModel_New(project secretly.Project) SecretFormModel {
 	value_ti.CharLimit = 156
 	value_ti.Width = 20
 
+	var initialSecretCopy secretly.Secret
+	if initialSecret != nil {
+		initialSecretCopy = *initialSecret
+	}
+
 	return SecretFormModel{
-		nameInput:  name_ti,
-		valueInput: value_ti,
-		err:        nil,
-		choices:    project.Environments,
-		selected:   make(map[int]struct{}),
-		envFocused: false,
-		project:    project,
+		nameInput:       name_ti,
+		valueInput:      value_ti,
+		err:             nil,
+		choices:         project.Environments,
+		selected:        make(map[int]struct{}),
+		initialSelected: initialSelections,
+		envFocused:      false,
+		project:         project,
+		initialSecret:   initialSecretCopy,
 	}
 }
 
@@ -55,16 +64,43 @@ func (m SecretFormModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m SecretFormModel) BuildSecrets() []secretly.Secret {
+func (m SecretFormModel) BuildSecrets() ([]secretly.Secret, []secretly.Environment, []secretly.Environment) {
 	var secrets []secretly.Secret
 	value := m.valueInput.Value()
 	name := m.nameInput.Value()
+
+	// Environments to which the secret was added
+	var addedEnvironments []secretly.Environment
+
+	// Environments from which the secret was removed
+	var removedEnvironments []secretly.Environment
+
 	for i := range m.selected {
 		environment := m.choices[i]
-		secret := secretly.Secret_build(name, value, m.project, environment)
+		var secret secretly.Secret
+
+		if m.initialSecret == (secretly.Secret{}) {
+			// If the initial secret is an empty struct, treat it as if it's nil
+			secret = secretly.Secret_build(name, value, m.project, environment)
+		} else {
+			secret = m.initialSecret
+			secret.Name = name
+			secret.Value = value
+		}
+
 		secrets = append(secrets, secret)
+		if _, wasInitiallySelected := m.initialSelected[i]; !wasInitiallySelected {
+			addedEnvironments = append(addedEnvironments, environment)
+		}
 	}
-	return secrets
+
+	for i := range m.initialSelected {
+		if _, isSelectedNow := m.selected[i]; !isSelectedNow {
+			removedEnvironments = append(removedEnvironments, m.choices[i])
+		}
+	}
+
+	return secrets, addedEnvironments, removedEnvironments
 }
 
 func (m SecretFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
